@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Distribyutor</title>
+<style>
+:root{
+  --bg:#eef2f3; --surface:#fff; --ink:#12232e; --muted:#5b6b76; --line:#d5dee2;
+  --brand:#0e6b6b; --brand-d:#0a5252; --ok:#2f7d4f; --warn:#a96a0b; --bad:#b3382c;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+h1,h2,h3,p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #f2b33d;outline-offset:2px}
+
+/* Kirish / ro'yxatdan o'tish */
+.login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.authbox{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:26px;display:grid;gap:16px}
+.authbox form{display:grid;gap:14px}
+.authbox h1{font-size:1.6rem;letter-spacing:-.01em}
+.authbox p{color:var(--muted)}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{min-height:44px;border:0;background:#fff;cursor:pointer;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--brand);color:#fff}
+
+/* Ramka */
+header.top{background:var(--brand);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 20px}
+header.top b{font-size:1.15rem;letter-spacing:-.01em}
+header.top .who{display:flex;align-items:center;gap:12px;font-size:.92rem}
+header.top .who span{opacity:.85}
+header.top button{background:transparent;border:1px solid rgba(255,255,255,.55);color:#fff;min-height:36px;padding:0 12px;border-radius:8px;cursor:pointer}
+nav.tabs{background:var(--surface);border-bottom:1px solid var(--line);display:flex;gap:4px;padding:0 12px;overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;min-height:48px;padding:0 14px;cursor:pointer;color:var(--muted);white-space:nowrap;font-weight:600}
+nav.tabs button[aria-selected="true"]{color:var(--brand);border-bottom-color:var(--brand)}
+nav.tabs .n{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:99px;background:var(--bad);color:#fff;font-size:.78rem;line-height:20px;text-align:center}
+main{max-width:960px;margin:0 auto;padding:20px 16px 60px}
+.page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.page-head h2{font-size:1.35rem;letter-spacing:-.01em}
+
+/* Maydonlar va tugmalar */
+input,select,textarea{min-height:44px;padding:0 12px;border:1px solid #b9c6cc;border-radius:8px;background:#fff;width:100%}
+label{display:grid;gap:4px;font-size:.9rem;color:var(--muted);font-weight:600}
+button.primary,button.ghost,button.danger,.authbox button[type=submit]{min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--brand);background:var(--brand);color:#fff;font-weight:600;cursor:pointer}
+button.primary:hover,.authbox button[type=submit]:hover{background:var(--brand-d)}
+button.primary:disabled{background:#9db8b8;border-color:#9db8b8;cursor:not-allowed}
+button.ghost{background:#fff;color:var(--brand)}
+button.ghost:hover{background:#e6f2f2}
+button.danger{background:#fff;color:var(--bad);border-color:var(--bad)}
+button.small{min-height:36px;padding:0 12px;font-size:.92rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row > input{flex:1 1 120px;width:auto}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+.card h3{font-size:1.05rem}
+.meta{color:var(--muted);font-size:.92rem}
+.empty{padding:28px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed #b9c6cc;border-radius:12px}
+.section-title{font-size:1.05rem;margin:22px 0 10px}
+
+/* Buyurtma jadvali haqida xabar */
+.notice{border-radius:10px;padding:12px 14px;margin-bottom:14px;display:grid;gap:2px}
+.notice.ok{background:#e4f3ea;border:1px solid #b7dcc4}
+.notice.closed{background:#fbeceb;border:1px solid #efc3be}
+
+/* Katalog */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0}
+.chips button{min-height:38px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:#fff;cursor:pointer;white-space:nowrap;font-weight:600;color:var(--muted)}
+.chips button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.prod{margin:0;display:grid;gap:6px;align-content:start}
+.price{font-weight:700;font-size:1.15rem}
+
+/* Qoldiq */
+.item-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+.left{font-weight:700;font-size:1.1rem}
+.left.ok{color:var(--ok)} .left.low{color:var(--warn)} .left.out{color:var(--bad)}
+.bar{height:14px;border-radius:99px;background:#dde6e9;overflow:hidden;margin-bottom:8px}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--ok)}
+.bar i.low{background:var(--warn)} .bar i.out{background:var(--bad)}
+.item .row{margin-top:12px}
+
+/* Qatorlar */
+.line{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--line)}
+.line:last-child{border-bottom:0}
+.line .what{flex:1 1 220px}
+.line .what b{display:block}
+.line input.qty{width:110px;flex:none}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.82rem;font-weight:600;border:1px solid currentColor}
+.s-yangi,.s-kutilmoqda{color:var(--warn)} .s-tasdiqlandi{color:var(--brand)} .s-yetkazildi{color:var(--ok)} .s-bekor,.s-rad{color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.facts div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+.facts dt{color:var(--muted);font-size:.9rem}
+.facts dd{margin:2px 0 0;font-size:1.5rem;font-weight:700}
+.facts dd.bad{color:var(--bad)}
+.days{display:flex;flex-wrap:wrap;gap:8px}
+.days label{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:0 12px;min-height:44px;color:var(--ink);cursor:pointer}
+.days input{width:auto;min-height:0}
+
+dialog{border:0;border-radius:14px;padding:0;width:min(480px,calc(100vw - 24px));box-shadow:0 20px 60px rgba(18,35,46,.35)}
+dialog::backdrop{background:rgba(18,35,46,.5)}
+dialog form{padding:22px;display:grid;gap:14px}
+dialog h3{font-size:1.2rem}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:calc(100vw - 32px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
+#toast.show{opacity:1}
+#toast.bad{background:var(--bad)}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+@media (max-width:520px){header.top .who span{display:none} main{padding-top:14px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<dialog id="dlg"></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Number(n ?? 0).toLocaleString('ru-RU', {maximumFractionDigits: 2});
+const fd = s => s ? String(s).slice(0, 10) : '';
+const state = { token: localStorage.getItem('token'), user: null, store: null, tab: null, ofilter: 'yangi', cart: {}, catalog: [], q: '', cat: '' };
+const ROLE = { admin: 'Administrator', zavod: 'Distribyutor', dokon: "Do'kon" };
+const PANEL = { admin: 'Admin paneli', zavod: 'Zavod paneli', dokon: "Do'kon paneli" };
+const PAYL = { 'naqd': 'Naqd pul', "o'tkazma": "Bank o'tkazmasi", 'online': 'Online to\'lov' };
+const STATUS_CLASS = { 'yangi': 's-yangi', 'tasdiqlandi': 's-tasdiqlandi', 'yetkazildi': 's-yetkazildi', 'bekor qilindi': 's-bekor', 'kutilmoqda': 's-kutilmoqda', 'rad etildi': 's-rad' };
+const DAYS = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba'];
+
+/* ---------- Yordamchilar ---------- */
+let toastTimer;
+function toast(msg, bad) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'show' + (bad ? ' bad' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', 3800);
+}
+function errText(d) {
+  if (!d) return '';
+  if (typeof d.detail === 'string') return d.detail;
+  if (Array.isArray(d.detail)) return d.detail.map(x => (x.loc || []).slice(1).join('.') + ': ' + x.msg).join('; ');
+  return '';
+}
+async function api(path, { method = 'GET', body, form } = {}) {
+  const headers = {};
+  if (state.token) headers.Authorization = 'Bearer ' + state.token;
+  let payload;
+  if (form) payload = new URLSearchParams(form);
+  else if (body !== undefined) { headers['Content-Type'] = 'application/json'; payload = JSON.stringify(body); }
+  const res = await fetch(path, { method, headers, body: payload });
+  let data = null;
+  try { data = await res.json(); } catch {}
+  if (res.status === 401 && state.token) { logout(); throw new Error('Qayta kiring'); }
+  if (!res.ok) throw new Error(errText(data) || 'Xatolik yuz berdi');
+  return data;
+}
+async function run(fn) { try { await fn(); } catch (e) { toast(e.message, true); } }
+const empty = text => `<div class="empty">${text}</div>`;
+const badge = s => `<span class="badge ${STATUS_CLASS[s] || ''}">${esc(s)}</span>`;
+const opts = (list, label) => list.map(x => `<option value="${x.id}">${esc(label(x))}</option>`).join('');
+const dlgClose = () => $('#dlg').close();
+function dlgOpen(html) { $('#dlg').innerHTML = html; $('#dlg').showModal(); }
+const payOpts = sel => Object.entries(PAYL).map(([v, l]) => `<option value="${esc(v)}" ${v === sel ? 'selected' : ''}>${l}</option>`).join('');
+const today = () => new Date().toISOString().slice(0, 10);
+const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+
+/* ---------- Kirish / ro'yxatdan o'tish ---------- */
+function authView(mode = 'login') {
+  const tabs = `<div class="seg"><button type="button" class="${mode === 'login' ? 'on' : ''}" onclick="authView('login')">Kirish</button>
+    <button type="button" class="${mode === 'register' ? 'on' : ''}" onclick="authView('register')">Ro'yxatdan o'tish</button></div>`;
+  const login = `<form onsubmit="doLogin(event)">
+      <label>Login yoki telefon <input id="u" autocomplete="username" required autofocus></label>
+      <label>Parol <input id="p" type="password" autocomplete="current-password" required></label>
+      <button type="submit">Kirish</button></form>`;
+  const register = `<form onsubmit="doRegister(event)">
+      <p>Do'kon egasi sifatida ro'yxatdan o'ting. Distribyutor tasdiqlagach, buyurtma bera olasiz.</p>
+      <label>Ismingiz <input id="r-name" required autocomplete="name"></label>
+      <label>Do'kon nomi <input id="r-store" required></label>
+      <label>Manzil <input id="r-addr" autocomplete="street-address"></label>
+      <label>Telefon raqami <input id="r-phone" type="tel" inputmode="tel" placeholder="90 123 45 67" required autocomplete="tel"></label>
+      <label>Parol (kamida 6 ta belgi) <input id="r-pass" type="password" minlength="6" required autocomplete="new-password"></label>
+      <button type="submit">Ro'yxatdan o'tish</button></form>`;
+  $('#app').innerHTML = `<div class="login"><div class="authbox"><h1>Distribyutor</h1>${tabs}${mode === 'login' ? login : register}</div></div>`;
+}
+function doLogin(e) {
+  e.preventDefault();
+  run(async () => {
+    const r = await api('/auth/login', { method: 'POST', form: { username: $('#u').value.trim(), password: $('#p').value } });
+    state.token = r.access_token; localStorage.setItem('token', state.token);
+    await boot();
+  });
+}
+function doRegister(e) {
+  e.preventDefault();
+  run(async () => {
+    const r = await api('/auth/register', { method: 'POST', body: {
+      full_name: $('#r-name').value.trim(), store_name: $('#r-store').value.trim(),
+      address: $('#r-addr').value.trim(), phone: $('#r-phone').value.trim(), password: $('#r-pass').value } });
+    state.token = r.access_token; localStorage.setItem('token', state.token);
+    toast("Ro'yxatdan o'tdingiz");
+    await boot();
+  });
+}
+function logout() {
+  state.token = null; state.user = null; state.store = null; state.cart = {};
+  localStorage.removeItem('token');
+  authView('login');
+}
+
+/* ---------- Asosiy ramka ---------- */
+const TABS = {
+  dokon: [['catalog', 'Katalog'], ['cart', 'Savat'], ['orders', 'Buyurtmalar'], ['pending', 'Qabul'], ['stock', 'Qoldiq'], ['pay', "To'lov"], ['password', 'Parol']],
+  zavod: [['dash', 'Bosh sahifa'], ['zorders', 'Buyurtmalar'], ['deliver', 'Yetkazish'], ['zstock', 'Qoldiq'], ['debts', "To'lovlar"], ['settings', 'Sozlamalar'], ['password', 'Parol']],
+  admin: [['overview', 'Umumiy'], ['stores', "Do'konlar"], ['zorders', 'Buyurtmalar'], ['debts', 'Moliya'], ['zstock', 'Qoldiq'], ['products', 'Tovarlar'], ['users', 'Foydalanuvchilar'], ['settings', 'Sozlamalar'], ['report', 'Hisobot'], ['password', 'Parol']],
+};
+function topBar() {
+  const name = state.user.role === 'dokon' && state.store ? state.store.name : (state.user.full_name || state.user.username);
+  return `<header class="top"><b>${PANEL[state.user.role]}</b>
+    <div class="who"><span>${esc(name)}</span><button onclick="logout()">Chiqish</button></div></header>`;
+}
+function shell() {
+  const tabs = TABS[state.user.role].map(([id, name]) =>
+    `<button role="tab" id="t-${id}" aria-selected="false" onclick="setTab('${id}')">${name}<span class="n" hidden></span></button>`).join('');
+  $('#app').innerHTML = `${topBar()}<nav class="tabs" role="tablist">${tabs}</nav><main id="view"></main>`;
+}
+function setTab(id) {
+  state.tab = id;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.id === 't-' + id));
+  run(() => VIEWS[id]());
+}
+function setBadge(tab, n) {
+  const el = $('#t-' + tab + ' .n');
+  if (!el) return;
+  el.textContent = n; el.hidden = !(n > 0);
+}
+async function refreshBadges() {
+  if (state.user.role === 'dokon') {
+    const p = await api('/dokon/deliveries?only_pending=true');
+    setBadge('pending', p.length);
+    updateCartBadge();
+  } else {
+    const d = await api('/zavod/dashboard');
+    setBadge('zorders', d.new_orders);
+    setBadge('debts', d.pending_payments);
+    setBadge('stores', d.pending_stores);
+  }
+}
+function waitingView() {
+  $('#app').innerHTML = `${topBar()}<main><div class="card" style="max-width:520px;margin:30px auto">
+    <h2 style="margin-bottom:8px">Hisobingiz tasdiqlanmoqda</h2>
+    <p class="meta">"${esc(state.store.name)}" do'koni ro'yxatdan o'tdi. Distribyutor tasdiqlagach, katalog va buyurtma bo'limlari ochiladi. Odatda bu uzoq vaqt olmaydi.</p>
+    <div class="row" style="margin-top:16px"><button class="primary" onclick="run(boot)">Holatni tekshirish</button></div></div></main>`;
+}
+async function boot() {
+  if (!state.token) return authView('login');
+  try { state.user = await api('/auth/me'); } catch { return authView('login'); }
+  if (state.user.role === 'dokon') { location.replace('/ilova'); return; }
+  if (state.user.role === 'dokon') {
+    state.store = (await api('/dokon/me')).store;
+    loadCart();
+    if (!state.store.approved) return waitingView();
+  }
+  shell();
+  setTab(TABS[state.user.role][0][0]);
+  run(refreshBadges);
+}
+
+/* =====================  DO'KON ILOVASI  ===================== */
+const cartKey = () => 'cart_' + state.user.id;
+function loadCart() { try { state.cart = JSON.parse(localStorage.getItem(cartKey())) || {}; } catch { state.cart = {}; } }
+function saveCart() { try { localStorage.setItem(cartKey(), JSON.stringify(state.cart)); } catch {} updateCartBadge(); }
+function updateCartBadge() { setBadge('cart', Object.keys(state.cart).length); }
+
+function scheduleBanner(s) {
+  const extra = (s.min_order_sum > 0 ? ` Minimal buyurtma: ${fmt(s.min_order_sum)} so'm.` : '') + (s.note ? ' ' + s.note : '');
+  return `<div class="notice ${s.open_now ? 'ok' : 'closed'}"><b>${s.open_now ? 'Hozir buyurtma qabul qilinadi' : 'Hozir buyurtma qabul qilinmaydi'}</b>
+    <span class="meta">${esc(s.message)}${esc(extra)}</span></div>`;
+}
+
+/* --- Katalog --- */
+async function vCatalog() {
+  const [cat, sch] = await Promise.all([api('/dokon/catalog'), api('/dokon/schedule')]);
+  state.catalog = cat; state.sched = sch;
+  state.cats = [...new Set(cat.map(p => p.category).filter(Boolean))];
+  if (state.cat && !state.cats.includes(state.cat)) state.cat = '';
+  $('#view').innerHTML = `${scheduleBanner(sch)}
+    <div class="page-head"><h2>Katalog</h2><button class="primary" onclick="setTab('cart')">Savatga o'tish</button></div>
+    <input type="search" id="q" placeholder="Tovar qidirish" value="${esc(state.q)}" oninput="state.q=this.value;renderProducts()" aria-label="Tovar qidirish">
+    <div class="chips" id="chips"></div><div id="plist"></div>`;
+  renderChips(); renderProducts();
+}
+function renderChips() {
+  if (!state.cats.length) { $('#chips').innerHTML = ''; return; }
+  const btn = (label, val) => `<button class="${state.cat === val ? 'on' : ''}" onclick="pickCat(${val === '' ? -1 : state.cats.indexOf(val)})">${esc(label)}</button>`;
+  $('#chips').innerHTML = btn('Hammasi', '') + state.cats.map(c => btn(c, c)).join('');
+}
+function pickCat(i) { state.cat = i < 0 ? '' : state.cats[i]; renderChips(); renderProducts(); }
+function renderProducts() {
+  const q = state.q.trim().toLowerCase();
+  const list = state.catalog.filter(p => (!state.cat || p.category === state.cat) && (!q || p.name.toLowerCase().includes(q)));
+  $('#plist').innerHTML = list.length ? `<div class="pgrid">${list.map(p => `
+    <article class="card prod">
+      <h3>${esc(p.name)}</h3>
+      <p class="meta">${esc([p.category, p.description].filter(Boolean).join(', '))}</p>
+      <p class="price">${fmt(p.price)} so'm <span class="meta">/ ${esc(p.unit)}</span></p>
+      ${p.remaining > 0 ? `<p class="meta">Sizda qoldiq: ${fmt(p.remaining)} ${esc(p.unit)}</p>` : ''}
+      <div class="row">
+        <input type="number" id="q${p.id}" min="0" step="any" value="1" inputmode="decimal" aria-label="${esc(p.name)} miqdori">
+        <button class="primary" onclick="addToCart(${p.id})">Savatga</button>
+      </div>
+      ${state.cart[p.id] ? `<p class="meta">Savatda: ${fmt(state.cart[p.id])} ${esc(p.unit)}</p>` : ''}
+    </article>`).join('')}</div>` : empty('Tovar topilmadi.');
+}
+function addToCart(id) {
+  const q = parseFloat($('#q' + id).value);
+  if (!(q > 0)) return toast('Miqdorni kiriting', true);
+  state.cart[id] = (state.cart[id] || 0) + q;
+  saveCart(); toast("Savatga qo'shildi"); renderProducts();
+}
+
+/* --- Savat --- */
+async function vCart() {
+  const [cat, sch] = await Promise.all([api('/dokon/catalog'), api('/dokon/schedule')]);
+  state.catalog = cat; state.sched = sch;
+  for (const id of Object.keys(state.cart)) if (!cat.some(p => p.id == id)) delete state.cart[id];
+  saveCart();
+  const lines = Object.entries(state.cart).map(([id, q]) => ({ p: cat.find(x => x.id == id), q }));
+  const total = lines.reduce((s, l) => s + l.p.price * l.q, 0);
+  state.cartTotal = total;
+  const tooLow = sch.min_order_sum > 0 && total < sch.min_order_sum;
+  $('#view').innerHTML = `${scheduleBanner(sch)}<div class="page-head"><h2>Savat</h2></div>` + (lines.length ? `
+    <div class="card">${lines.map(({ p, q }) => `
+      <div class="line">
+        <div class="what"><b>${esc(p.name)}</b><span class="meta">${fmt(p.price)} so'm / ${esc(p.unit)}</span></div>
+        <input class="qty" type="number" min="0" step="any" value="${q}" inputmode="decimal" aria-label="${esc(p.name)} miqdori" onchange="setQty(${p.id}, this.value)">
+        <span style="min-width:110px;text-align:right"><b>${fmt(p.price * q)}</b></span>
+        <button class="danger small" onclick="setQty(${p.id}, 0)">Olib tashlash</button>
+      </div>`).join('')}
+      <div class="line"><b>Jami</b><b style="font-size:1.25rem">${fmt(total)} so'm</b></div></div>
+    <form class="card" onsubmit="placeOrder(event)">
+      <div class="grid2">
+        <label>To'lov usuli <select id="c-pay">${payOpts('naqd')}</select></label>
+        <label>Kerakli yetkazish sanasi <input id="c-date" type="date" min="${today()}"></label>
+      </div>
+      <p class="meta" style="margin-top:8px">Naqd pul yetkazilganda to'lanadi. Bank o'tkazmasi va online to'lovdan so'ng "To'lov" bo'limida xabar bering.</p>
+      <label style="margin-top:12px">Izoh <input id="c-note" maxlength="200" placeholder="Ixtiyoriy"></label>
+      ${tooLow ? `<p class="meta" style="margin-top:10px;color:var(--bad)">Minimal buyurtma summasi ${fmt(sch.min_order_sum)} so'm. Yana ${fmt(sch.min_order_sum - total)} so'mlik tovar qo'shing.</p>` : ''}
+      <div class="row" style="margin-top:14px"><button class="primary" type="submit" ${(!sch.open_now || tooLow) ? 'disabled' : ''}>Buyurtma berish</button>
+        <button class="ghost" type="button" onclick="clearCart()">Savatni tozalash</button></div>
+    </form>` : empty("Savat bo'sh. Katalogdan tovar tanlang.") + `<div class="row" style="margin-top:12px;justify-content:center"><button class="primary" onclick="setTab('catalog')">Katalogga o'tish</button></div>`);
+}
+function setQty(id, v) {
+  const q = parseFloat(v);
+  if (q > 0) state.cart[id] = q; else delete state.cart[id];
+  saveCart(); run(vCart);
+}
+function clearCart() { state.cart = {}; saveCart(); run(vCart); }
+function placeOrder(e) {
+  e.preventDefault();
+  run(async () => {
+    const items = Object.entries(state.cart).map(([id, q]) => ({ product_id: +id, quantity: q }));
+    const body = { items, payment_method: $('#c-pay').value, note: $('#c-note').value };
+    if ($('#c-date').value) body.wanted_date = $('#c-date').value;
+    await api('/dokon/orders', { method: 'POST', body });
+    state.cart = {}; saveCart();
+    toast('Buyurtma yuborildi');
+    setTab('orders');
+  });
+}
+
+/* --- Buyurtmalar --- */
+async function vOrders() {
+  const [list, pend] = await Promise.all([api('/dokon/orders'), api('/dokon/deliveries?only_pending=true')]);
+  state.orders = list;
+  const awaiting = new Set(pend.map(d => d.order_id).filter(Boolean));
+  $('#view').innerHTML = `<div class="page-head"><h2>Buyurtmalarim</h2><button class="primary" onclick="setTab('catalog')">Yangi buyurtma</button></div>` +
+    (list.length ? list.map(o => `<article class="card">
+      <div class="item-head"><h3>Buyurtma #${o.id}</h3>${badge(o.status)}</div>
+      <p class="meta">${fd(o.created_at)}, ${PAYL[o.payment_method] || esc(o.payment_method)}${o.wanted_date ? ', kerakli sana: ' + fd(o.wanted_date) : ''}${o.note ? ', ' + esc(o.note) : ''}</p>
+      <div style="margin:8px 0">${o.items.map(i => `<div class="line"><span>${esc(i.product)}</span><span>${fmt(i.quantity)} ${esc(i.unit)} x ${fmt(i.price)}</span></div>`).join('')}</div>
+      <div class="item-head"><b>Jami: ${fmt(o.total)} so'm</b>
+        <div class="row">
+          ${awaiting.has(o.id) ? `<button class="primary small" onclick="receiveOrder(${o.id})">Tovarni qabul qildim</button>` : ''}
+          ${o.status === 'yangi' ? `<button class="danger small" onclick="cancelOrder(${o.id})">Bekor qilish</button>` : ''}
+          <button class="ghost small" onclick="repeatOrder(${o.id})">Takrorlash</button>
+        </div></div>
+    </article>`).join('') : empty("Hali buyurtma bermagansiz. Katalogdan boshlang."));
+}
+function cancelOrder(id) { run(async () => { await api(`/dokon/orders/${id}/cancel`, { method: 'POST' }); toast('Buyurtma bekor qilindi'); await vOrders(); }); }
+function receiveOrder(id) { run(async () => { await api(`/dokon/orders/${id}/receive`, { method: 'POST' }); toast('Qabul qilindi'); await vOrders(); refreshBadges(); }); }
+function repeatOrder(id) {
+  const o = state.orders.find(x => x.id === id);
+  o.items.forEach(i => { state.cart[i.product_id] = (state.cart[i.product_id] || 0) + i.quantity; });
+  saveCart(); toast('Savatga qo\'shildi'); setTab('cart');
+}
+
+/* --- Qabul qilish --- */
+async function vPending() {
+  const list = await api('/dokon/deliveries?only_pending=true');
+  setBadge('pending', list.length);
+  const groups = {};
+  list.forEach(d => (groups[d.order_id || 0] ||= []).push(d));
+  const html = Object.entries(groups).map(([oid, ds]) => `<div class="card">
+    <div class="item-head"><h3>${oid > 0 ? 'Buyurtma #' + oid : 'Buyurtmasiz yetkazish'}</h3>
+      ${oid > 0 ? `<button class="primary small" onclick="receiveOrder2(${oid})">Hammasini qabul qildim</button>` : ''}</div>
+    ${ds.map(d => `<div class="line"><div class="what"><b>${esc(d.product)}: ${fmt(d.quantity)} ${esc(d.unit)}</b><span class="meta">${fd(d.delivered_on)}, narxi ${fmt(d.price)}</span></div>
+      ${oid > 0 ? '' : `<button class="primary small" onclick="confirmDelivery(${d.id})">Qabul qildim</button>`}</div>`).join('')}
+  </div>`).join('');
+  $('#view').innerHTML = `<div class="page-head"><h2>Qabul qilish</h2></div>` + (html || empty("Qabul qilinadigan yetkazish yo'q."));
+}
+function receiveOrder2(id) { run(async () => { await api(`/dokon/orders/${id}/receive`, { method: 'POST' }); toast('Qabul qilindi'); await vPending(); }); }
+function confirmDelivery(id) { run(async () => { await api(`/dokon/deliveries/${id}/confirm`, { method: 'POST' }); toast('Qabul qilindi'); await vPending(); }); }
+
+/* --- Qoldiq va sotuv --- */
+async function vStock() {
+  const [d, sales] = await Promise.all([api('/dokon/stock'), api('/dokon/sales')]);
+  const rows = d.items.map(r => {
+    const pct = r.delivered > 0 ? Math.max(0, Math.min(100, r.remaining / r.delivered * 100)) : 0;
+    const lvl = r.remaining <= 0 ? 'out' : pct < 25 ? 'low' : 'ok';
+    const sug = r.suggested_order > 0 ? ` (${fmt(r.suggested_order)})` : '';
+    return `<article class="card item">
+      <div class="item-head"><h3>${esc(r.product)}</h3><span class="left ${lvl}">${fmt(r.remaining)} ${esc(r.unit)} qoldi</span></div>
+      <div class="bar" role="img" aria-label="Qoldiq ${Math.round(pct)} foiz"><i class="${lvl}" style="width:${pct}%"></i></div>
+      <p class="meta">Yetkazilgan ${fmt(r.delivered)}, sotilgan ${fmt(r.sold)}. Oxirgi 7 kunda ${fmt(r.sold_last_7_days)} ${esc(r.unit)} sotilgan.</p>
+      <div class="row">
+        <input type="number" min="0" step="any" inputmode="decimal" id="s${r.product_id}" placeholder="Sotilgan miqdor" aria-label="${esc(r.product)}: sotilgan miqdor">
+        <button class="primary" onclick="sell(${r.product_id})">Sotuvni yozish</button>
+        <button class="ghost" onclick="addSuggested(${r.product_id}, ${r.suggested_order})">Savatga qo'shish${sug}</button>
+      </div></article>`;
+  }).join('');
+  $('#view').innerHTML = `<div class="page-head"><h2>Qoldiq va sotuv</h2></div>
+    ${rows || empty("Hali tovar yetkazilmagan. Buyurtma bering va qabul qiling.")}
+    <details class="card"><summary style="cursor:pointer;font-weight:600">Sotuvlar tarixi</summary>
+      ${sales.length ? sales.slice(0, 30).map(s => `<div class="line"><b>${esc(s.product)}</b><span>${fmt(s.quantity)} ${esc(s.unit)}</span><span class="meta">${fd(s.sold_on)}</span></div>`).join('') : '<p class="meta" style="margin-top:8px">Hali sotuv kiritilmagan.</p>'}
+    </details>`;
+}
+function sell(pid) {
+  run(async () => {
+    const q = parseFloat($('#s' + pid).value);
+    if (!(q > 0)) throw new Error('Sotilgan miqdorni kiriting');
+    await api('/dokon/sales', { method: 'POST', body: { product_id: pid, quantity: q } });
+    toast('Sotuv saqlandi'); await vStock();
+  });
+}
+function addSuggested(pid, qty) {
+  state.cart[pid] = (state.cart[pid] || 0) + (qty > 0 ? qty : 1);
+  saveCart(); toast("Savatga qo'shildi"); setTab('cart');
+}
+
+/* --- To'lov --- */
+async function vPay() {
+  const [d, list] = await Promise.all([api('/dokon/debt'), api('/dokon/payments')]);
+  $('#view').innerHTML = `<div class="page-head"><h2>To'lov va qarz</h2></div>
+    <dl class="facts" style="margin-bottom:16px">
+      <div><dt>Olingan tovar summasi</dt><dd>${fmt(d.total_delivered_sum)}</dd></div>
+      <div><dt>To'langan</dt><dd>${fmt(d.paid)}</dd></div>
+      <div><dt>Tasdiq kutilmoqda</dt><dd>${fmt(d.pending_payments)}</dd></div>
+      <div><dt>Qarz</dt><dd class="${d.debt > 0 ? 'bad' : ''}">${fmt(d.debt)}</dd></div>
+    </dl>
+    <h3 class="section-title">To'lov qilganingizni xabar qiling</h3>
+    <form class="card" onsubmit="sendPay(event)">
+      <div class="grid2">
+        <label>Summa (so'm) <input id="y-a" type="number" min="0" step="any" inputmode="decimal" required></label>
+        <label>Usul <select id="y-m">${payOpts('naqd')}</select></label>
+        <label>Izoh <input id="y-n" maxlength="200" placeholder="Masalan: chek raqami"></label>
+      </div>
+      <p class="meta" style="margin-top:8px">Distribyutor tasdiqlagach, summa qarzingizdan ayriladi. Click/Payme orqali avtomatik online to'lov keyingi bosqichda ulanadi.</p>
+      <div class="row" style="margin-top:12px"><button class="primary" type="submit">Xabar yuborish</button></div>
+    </form>
+    <h3 class="section-title">To'lovlar tarixi</h3>
+    ${list.length ? `<div class="card">${list.map(p => `<div class="line"><div class="what"><b>${fmt(p.amount)} so'm</b><span class="meta">${fd(p.paid_on)}, ${PAYL[p.method] || esc(p.method)}${p.note ? ', ' + esc(p.note) : ''}</span></div>${badge(p.status)}</div>`).join('')}</div>` : empty("Hali to'lov kiritilmagan.")}`;
+}
+function sendPay(e) {
+  e.preventDefault();
+  run(async () => {
+    await api('/dokon/payments', { method: 'POST', body: { amount: parseFloat($('#y-a').value), method: $('#y-m').value, note: $('#y-n').value } });
+    toast("To'lov haqida xabar yuborildi"); await vPay();
+  });
+}
+
+/* =====================  ZAVOD PANELI  ===================== */
+async function vDash() {
+  const d = await api('/zavod/dashboard');
+  setBadge('zorders', d.new_orders); setBadge('debts', d.pending_payments);
+  $('#view').innerHTML = `<div class="page-head"><h2>Bosh sahifa</h2></div>
+    <dl class="facts">
+      <div><dt>Yangi buyurtmalar</dt><dd>${d.new_orders}</dd></div>
+      <div><dt>Do'kon qabul qilishini kutayotgan yetkazishlar</dt><dd>${d.deliveries_waiting_store_confirmation}</dd></div>
+      <div><dt>Tasdiq kutayotgan to'lovlar</dt><dd>${d.pending_payments}</dd></div>
+      <div><dt>Umumiy qarz</dt><dd class="${d.total_debt > 0 ? 'bad' : ''}">${fmt(d.total_debt)}</dd></div>
+    </dl>
+    <h3 class="section-title">Tovar kerak bo'lishi mumkin bo'lgan do'konlar</h3>
+    ${d.need_restock.length ? `<div class="card">${d.need_restock.map(r => `
+      <div class="line"><div class="what"><b>${esc(r.store)}</b><span class="meta">${esc(r.product)}, qoldiq ${fmt(r.remaining)} ${esc(r.unit)}</span></div>
+      <span>Tavsiya: <b>${fmt(r.suggested_order)} ${esc(r.unit)}</b></span></div>`).join('')}</div>` : empty("Hozircha hamma do'konda tovar yetarli.")}`;
+}
+
+async function vZOrders() {
+  const q = state.ofilter ? '?status=' + encodeURIComponent(state.ofilter) : '';
+  const list = await api('/zavod/orders' + q);
+  state.zorders = list;
+  const f = ['', 'yangi', 'tasdiqlandi', 'yetkazildi', 'bekor qilindi'];
+  $('#view').innerHTML = `<div class="page-head"><h2>Buyurtmalar</h2>
+      <select style="width:auto" aria-label="Holat bo'yicha" onchange="state.ofilter=this.value;run(vZOrders)">
+        ${f.map(s => `<option value="${s}" ${s === state.ofilter ? 'selected' : ''}>${s || 'Hammasi'}</option>`).join('')}
+      </select></div>` +
+    (list.length ? list.map(o => `<article class="card">
+      <div class="item-head"><h3>#${o.id}, ${esc(o.store)}</h3>${badge(o.status)}</div>
+      <p class="meta">${fd(o.created_at)}${o.store_phone ? ', ' + esc(o.store_phone) : ''}, ${PAYL[o.payment_method] || esc(o.payment_method)}${o.wanted_date ? ', kerakli sana: ' + fd(o.wanted_date) : ''}${o.note ? ', ' + esc(o.note) : ''}</p>
+      <div style="margin:8px 0">${o.items.map(i => `<div class="line"><span>${esc(i.product)}</span><span>${fmt(i.quantity)} ${esc(i.unit)} x ${fmt(i.price)}</span></div>`).join('')}</div>
+      <div class="item-head"><b>Jami: ${fmt(o.total)} so'm</b>
+        <div class="row">
+          ${o.status === 'yangi' || o.status === 'tasdiqlandi' ? `<button class="primary small" onclick="deliverDlg(${o.id})">Yetkazish</button>` : ''}
+          ${o.status === 'yangi' ? `<button class="ghost small" onclick="orderAct(${o.id},'approve')">Tasdiqlash</button><button class="danger small" onclick="orderAct(${o.id},'reject')">Rad etish</button>` : ''}
+        </div></div>
+    </article>`).join('') : empty("Bu holatda buyurtma yo'q."));
+}
+function orderAct(id, act) {
+  run(async () => {
+    await api(`/zavod/orders/${id}/${act}`, { method: 'POST', body: {} });
+    toast({ approve: 'Buyurtma tasdiqlandi', reject: 'Buyurtma rad etildi' }[act]);
+    await vZOrders(); refreshBadges();
+  });
+}
+function deliverDlg(id) {
+  const o = state.zorders.find(x => x.id === id);
+  dlgOpen(`<form onsubmit="doDeliver(event, ${id})">
+    <h3>Yetkazish: #${o.id}, ${esc(o.store)}</h3>
+    <p class="meta">Omborda yetmagan tovarning miqdorini kamaytiring (0 bo'lsa, yetkazilmaydi).</p>
+    ${o.items.map(i => `<label>${esc(i.product)} (so'ralgan: ${fmt(i.quantity)} ${esc(i.unit)})
+      <input id="dq${i.id}" type="number" min="0" step="any" inputmode="decimal" value="${i.quantity}"></label>`).join('')}
+    <label>Yetkazish sanasi <input id="dd" type="date" value="${today()}"></label>
+    <div class="row"><button class="primary" type="submit">Yetkazishni saqlash</button><button class="ghost" type="button" onclick="dlgClose()">Bekor qilish</button></div></form>`);
+}
+function doDeliver(e, id) {
+  e.preventDefault();
+  run(async () => {
+    const o = state.zorders.find(x => x.id === id);
+    const quantities = {};
+    o.items.forEach(i => { quantities[i.id] = parseFloat($('#dq' + i.id).value) || 0; });
+    await api(`/zavod/orders/${id}/deliver`, { method: 'POST', body: { quantities, delivered_on: $('#dd').value || null } });
+    dlgClose(); toast("Yetkazish kiritildi"); await vZOrders(); refreshBadges();
+  });
+}
+
+async function vDeliver() {
+  const [stores, products, pending] = await Promise.all([api('/stores'), api('/products'), api('/zavod/deliveries?only_pending=true')]);
+  const okStores = stores.filter(s => s.approved);
+  $('#view').innerHTML = `<div class="page-head"><h2>Buyurtmasiz yetkazish</h2></div>
+    <form class="card" onsubmit="sendDelivery(event)">
+      <div class="grid2">
+        <label>Do'kon <select id="d-s" required>${opts(okStores, s => s.name)}</select></label>
+        <label>Tovar <select id="d-p" required>${opts(products, p => `${p.name} (${p.unit})`)}</select></label>
+        <label>Miqdor <input id="d-q" type="number" min="0" step="any" inputmode="decimal" required></label>
+        <label>Narxi <input id="d-pr" type="number" min="0" step="any" inputmode="decimal" placeholder="Bo'sh bo'lsa, joriy narx"></label>
+      </div>
+      <div class="row" style="margin-top:14px"><button class="primary" type="submit">Yetkazishni saqlash</button></div>
+    </form>
+    <h3 class="section-title">Do'kon qabul qilishini kutayotganlar</h3>
+    ${pending.length ? `<div class="card">${pending.map(d => `
+      <div class="line"><div class="what"><b>${esc(d.store)}: ${esc(d.product)} ${fmt(d.quantity)} ${esc(d.unit)}</b><span class="meta">${fd(d.delivered_on)}${d.order_id ? ', buyurtma #' + d.order_id : ''}</span></div></div>`).join('')}</div>` : empty('Hammasi qabul qilingan.')}`;
+}
+function sendDelivery(e) {
+  e.preventDefault();
+  run(async () => {
+    const body = { store_id: +$('#d-s').value, product_id: +$('#d-p').value, quantity: parseFloat($('#d-q').value) };
+    if ($('#d-pr').value !== '') body.price = parseFloat($('#d-pr').value);
+    await api('/zavod/deliveries', { method: 'POST', body });
+    toast('Yetkazish saqlandi'); await vDeliver();
+  });
+}
+
+async function vZStock() {
+  const list = await api('/zavod/stock');
+  $('#view').innerHTML = `<div class="page-head"><h2>Do'konlardagi qoldiq</h2></div>` +
+    (list.length ? list.map(s => `<div class="card"><h3>${esc(s.store)}</h3>
+      ${s.items.length ? s.items.map(r => `<div class="line"><div class="what"><b>${esc(r.product)}</b><span class="meta">Oxirgi 7 kunda ${fmt(r.sold_last_7_days)} ${esc(r.unit)} sotilgan</span></div>
+        <span class="left ${r.remaining <= 0 ? 'out' : r.suggested_order > 0 ? 'low' : 'ok'}">${fmt(r.remaining)} ${esc(r.unit)}</span></div>`).join('') : '<p class="meta" style="margin-top:6px">Hali tovar yetkazilmagan.</p>'}
+    </div>`).join('') : empty("Hali tasdiqlangan do'kon yo'q."));
+}
+
+async function vDebts() {
+  const [d, stores, pending, recent] = await Promise.all([api('/zavod/debts'), api('/stores'), api('/zavod/payments?status=kutilmoqda'), api('/zavod/payments')]);
+  setBadge('debts', pending.length);
+  const okStores = stores.filter(s => s.approved);
+  $('#view').innerHTML = `<div class="page-head"><h2>${state.user.role === 'admin' ? 'Moliya' : "To'lovlar va qarzdorlik"}</h2></div>
+    <dl class="facts" style="margin-bottom:16px"><div><dt>Umumiy qarz</dt><dd class="${d.total_debt > 0 ? 'bad' : ''}">${fmt(d.total_debt)}</dd></div></dl>
+    ${pending.length ? `<h3 class="section-title">Do'konlar xabar qilgan to'lovlar (tasdiqlash kerak)</h3>
+      <div class="card">${pending.map(p => `<div class="line"><div class="what"><b>${esc(p.store)}: ${fmt(p.amount)} so'm</b><span class="meta">${fd(p.paid_on)}, ${PAYL[p.method] || esc(p.method)}${p.note ? ', ' + esc(p.note) : ''}</span></div>
+        <div class="row"><button class="primary small" onclick="payAct(${p.id},'confirm')">Qabul qilindi</button><button class="danger small" onclick="payAct(${p.id},'reject')">Rad etish</button></div></div>`).join('')}</div>` : ''}
+    <h3 class="section-title">Do'konlar qarzi</h3>
+    ${d.stores.length ? `<div class="card">${d.stores.map(s => `<div class="line"><div class="what"><b>${esc(s.store)}</b><span class="meta">Olingan ${fmt(s.total_delivered_sum)}, to'langan ${fmt(s.paid)}${s.pending_payments > 0 ? ', tasdiq kutilmoqda ' + fmt(s.pending_payments) : ''}</span></div>
+      <b class="left ${s.debt > 0 ? 'out' : 'ok'}">${fmt(s.debt)}</b></div>`).join('')}</div>` : empty("Hali do'kon yo'q.")}
+    <h3 class="section-title">To'lov kiritish</h3>
+    <form class="card" onsubmit="sendPayment(event)">
+      <div class="grid2">
+        <label>Do'kon <select id="py-s" required>${opts(okStores, s => s.name)}</select></label>
+        <label>Summa <input id="py-a" type="number" min="0" step="any" inputmode="decimal" required></label>
+        <label>Usul <select id="py-m">${payOpts('naqd')}</select></label>
+        <label>Izoh <input id="py-n" maxlength="200" placeholder="Ixtiyoriy"></label>
+      </div>
+      <div class="row" style="margin-top:14px"><button class="primary" type="submit">To'lovni saqlash</button></div>
+    </form>
+    <h3 class="section-title">So'nggi to'lovlar</h3>
+    ${recent.length ? `<div class="card">${recent.slice(0, 20).map(p => `<div class="line"><div class="what"><b>${esc(p.store)}: ${fmt(p.amount)} so'm</b><span class="meta">${fd(p.paid_on)}, ${PAYL[p.method] || esc(p.method)}</span></div>${badge(p.status)}</div>`).join('')}</div>` : empty("Hali to'lov yo'q.")}`;
+}
+function payAct(id, act) {
+  run(async () => { await api(`/zavod/payments/${id}/${act}`, { method: 'POST' }); toast('Saqlandi'); await vDebts(); });
+}
+function sendPayment(e) {
+  e.preventDefault();
+  run(async () => {
+    await api('/zavod/payments', { method: 'POST', body: { store_id: +$('#py-s').value, amount: parseFloat($('#py-a').value), method: $('#py-m').value, note: $('#py-n').value } });
+    toast("To'lov saqlandi"); await vDebts();
+  });
+}
+
+/* --- Sozlamalar: buyurtma kunlari va soatlari --- */
+async function vSettings() {
+  const s = await api('/zavod/settings');
+  $('#view').innerHTML = `<div class="page-head"><h2>Buyurtma qabul qilish jadvali</h2></div>
+    ${scheduleBanner(s)}
+    <form class="card" onsubmit="saveSettings(event)">
+      <h3 style="margin-bottom:10px">Qaysi kunlari buyurtma qabul qilinadi</h3>
+      <div class="days">${DAYS.map((n, i) => `<label><input type="checkbox" class="sd" value="${i + 1}" ${s.days.includes(i + 1) ? 'checked' : ''}>${n}</label>`).join('')}</div>
+      <div class="grid2" style="margin-top:14px">
+        <label>Ochilish vaqti <input id="st-o" type="time" value="${s.open_time}" required></label>
+        <label>Yopilish vaqti <input id="st-c" type="time" value="${s.close_time}" required></label>
+        <label>Minimal buyurtma summasi (so'm) <input id="st-m" type="number" min="0" step="any" inputmode="decimal" value="${s.min_order_sum}"></label>
+      </div>
+      <label style="margin-top:12px">Do'konlarga xabar (ixtiyoriy) <input id="st-n" maxlength="300" value="${esc(s.note)}" placeholder="Masalan: Yetkazish buyurtmadan keyingi kuni"></label>
+      <p class="meta" style="margin-top:8px">Vaqt O'zbekiston vaqti bilan hisoblanadi. Jadvaldan tashqari paytda do'konlar buyurtma bera olmaydi.</p>
+      <div class="row" style="margin-top:14px"><button class="primary" type="submit">Saqlash</button></div>
+    </form>`;
+}
+function saveSettings(e) {
+  e.preventDefault();
+  run(async () => {
+    const days = [...document.querySelectorAll('.sd:checked')].map(x => +x.value);
+    await api('/zavod/settings', { method: 'PUT', body: { order_days: days, open_time: $('#st-o').value, close_time: $('#st-c').value, min_order_sum: parseFloat($('#st-m').value) || 0, note: $('#st-n').value } });
+    toast('Jadval saqlandi'); await vSettings();
+  });
+}
+
+/* =====================  ADMIN PANELI  ===================== */
+const UNITS = ['dona', 'blok', 'kg', 'litr'];
+const unitOpts = cur => [...new Set([...UNITS, cur].filter(Boolean))].map(u => `<option ${u === cur ? 'selected' : ''}>${esc(u)}</option>`).join('');
+const ORDER_NAMES = ['yangi', 'tasdiqlandi', 'yetkazildi', 'bekor qilindi'];
+
+async function vOverview() {
+  const d = await api('/admin/overview');
+  setBadge('stores', d.pending_stores);
+  $('#view').innerHTML = `<div class="page-head"><h2>Umumiy ko'rsatkichlar</h2></div>
+    ${d.pending_stores > 0 ? `<div class="notice closed"><b>${d.pending_stores} ta yangi do'kon tasdiqlashni kutmoqda</b>
+      <div><button class="primary small" onclick="setTab('stores')">Ko'rish</button></div></div>` : ''}
+    <dl class="facts">
+      <div><dt>Faol do'konlar</dt><dd>${d.stores_count}</dd></div>
+      <div><dt>Tovarlar</dt><dd>${d.products_count}</dd></div>
+      <div><dt>Yetkazilgan tovar summasi</dt><dd>${fmt(d.total_delivered_sum)}</dd></div>
+      <div><dt>Tasdiqlangan to'lovlar</dt><dd>${fmt(d.total_paid)}</dd></div>
+      <div><dt>Tasdiq kutayotgan to'lovlar</dt><dd>${fmt(d.pending_payments)}</dd></div>
+      <div><dt>Umumiy qarz</dt><dd class="${d.total_debt > 0 ? 'bad' : ''}">${fmt(d.total_debt)}</dd></div>
+    </dl>
+    <h3 class="section-title">Buyurtmalar holati</h3>
+    <div class="card">${ORDER_NAMES.map(n => `<div class="line"><span>${badge(n)}</span><b>${d.orders[n] || 0}</b></div>`).join('')}</div>
+    <h3 class="section-title">Oxirgi 7 kunda sotilgan</h3>
+    ${d.sales_last_7_days.length ? `<div class="card">${d.sales_last_7_days.map(r => `<div class="line"><b>${esc(r.product)}</b><span>${fmt(r.quantity)} ${esc(r.unit)}</span></div>`).join('')}</div>` : empty("Oxirgi 7 kunda sotuv kiritilmagan.")}`;
+}
+
+/* --- Foydalanuvchilar --- */
+async function vUsers() {
+  const users = await api('/admin/users');
+  state.users = users;
+  $('#view').innerHTML = `<div class="page-head"><h2>Foydalanuvchilar</h2></div>
+    <form class="card" onsubmit="addUser(event)"><h3>Yangi foydalanuvchi</h3>
+      <div class="grid2" style="margin-top:10px">
+        <label>Login <input id="m-un" minlength="3" required autocomplete="off"></label>
+        <label>To'liq ismi <input id="m-uf"></label>
+        <label>Parol <input id="m-up" type="password" minlength="6" required autocomplete="new-password"></label>
+        <label>Roli <select id="m-ur"><option value="dokon">Do'kon</option><option value="zavod">Distribyutor</option><option value="admin">Administrator</option></select></label>
+      </div><div class="row" style="margin-top:12px"><button class="primary" type="submit">Foydalanuvchi qo'shish</button></div></form>
+    <div class="card">${users.map(u => `
+      <div class="line">
+        <div class="what"><b>${esc(u.username)}</b> ${u.is_active ? '' : '<span class="badge s-bekor">bloklangan</span>'}
+          <span class="meta">${esc(u.full_name)}${u.full_name ? ', ' : ''}${ROLE[u.role]}</span></div>
+        <div class="row">
+          ${u.id !== state.user.id ? `<button class="ghost small" onclick="toggleUser(${u.id})">${u.is_active ? 'Bloklash' : 'Faollashtirish'}</button>` : ''}
+          <button class="ghost small" onclick="pwDlg(${u.id})">Parolni tiklash</button>
+        </div>
+      </div>`).join('')}</div>`;
+}
+function addUser(e) {
+  e.preventDefault();
+  run(async () => {
+    await api('/admin/users', { method: 'POST', body: { username: $('#m-un').value.trim(), full_name: $('#m-uf').value, password: $('#m-up').value, role: $('#m-ur').value } });
+    toast("Foydalanuvchi qo'shildi"); await vUsers();
+  });
+}
+function toggleUser(id) {
+  run(async () => {
+    const u = state.users.find(x => x.id === id);
+    await api(`/admin/users/${id}`, { method: 'PATCH', body: { is_active: !u.is_active } });
+    toast(u.is_active ? 'Bloklandi' : 'Faollashtirildi'); await vUsers();
+  });
+}
+function pwDlg(id) {
+  const u = state.users.find(x => x.id === id);
+  dlgOpen(`<form onsubmit="doReset(event, ${id})">
+    <h3>Parolni tiklash: ${esc(u.username)}</h3>
+    <label>Yangi parol <input id="r-p" type="password" minlength="6" required autocomplete="new-password"></label>
+    <div class="row"><button class="primary" type="submit">Parolni saqlash</button><button class="ghost" type="button" onclick="dlgClose()">Bekor qilish</button></div></form>`);
+}
+function doReset(e, id) {
+  e.preventDefault();
+  run(async () => {
+    await api(`/admin/users/${id}/reset-password`, { method: 'POST', body: { new_password: $('#r-p').value } });
+    dlgClose(); toast('Parol yangilandi');
+  });
+}
+
+/* --- Do'konlar (tasdiqlash bilan) --- */
+async function vStoresAdmin() {
+  const [stores, users] = await Promise.all([api('/stores'), api('/admin/users')]);
+  state.stores = stores; state.users = users;
+  setBadge('stores', stores.filter(s => !s.approved).length);
+  const uname = id => (users.find(u => u.id === id) || {}).username;
+  const free = users.filter(u => u.role === 'dokon' && u.is_active && !stores.some(s => s.user_id === u.id));
+  const row = s => `<div class="line"><div class="what"><b>${esc(s.name)}</b> ${s.approved ? '' : badge('kutilmoqda')}
+      <span class="meta">${esc(s.address)}${s.address && s.phone ? ', ' : ''}${esc(s.phone)}${(s.address || s.phone) ? '. ' : ''}Foydalanuvchi: ${s.user_id ? esc(uname(s.user_id)) : 'biriktirilmagan'}</span></div>
+      <div class="row">${s.approved ? '' : `<button class="primary small" onclick="approveStore(${s.id})">Tasdiqlash</button>`}
+        <button class="ghost small" onclick="storeDlg(${s.id})">Tahrirlash</button></div></div>`;
+  const pending = stores.filter(s => !s.approved), ok = stores.filter(s => s.approved);
+  $('#view').innerHTML = `<div class="page-head"><h2>Do'konlar</h2></div>
+    ${pending.length ? `<h3 class="section-title" style="margin-top:0">Tasdiqlashni kutayotganlar</h3><div class="card">${pending.map(row).join('')}</div>` : ''}
+    <form class="card" onsubmit="addStore(event)"><h3>Yangi do'kon (admin qo'shadi)</h3>
+      <div class="grid2" style="margin-top:10px">
+        <label>Nomi <input id="m-sn" required></label>
+        <label>Manzili <input id="m-sa"></label>
+        <label>Telefon <input id="m-sp" inputmode="tel"></label>
+        <label>Do'kon foydalanuvchisi <select id="m-su"><option value="">Biriktirilmagan</option>${opts(free, u => u.username)}</select></label>
+      </div><div class="row" style="margin-top:12px"><button class="primary" type="submit">Do'kon qo'shish</button></div></form>
+    <h3 class="section-title">Faol do'konlar</h3>
+    ${ok.length ? `<div class="card">${ok.map(row).join('')}</div>` : empty("Hali faol do'kon yo'q.")}`;
+}
+function approveStore(id) {
+  run(async () => { await api(`/admin/stores/${id}`, { method: 'PATCH', body: { approved: true } }); toast("Do'kon tasdiqlandi"); await vStoresAdmin(); });
+}
+function addStore(e) {
+  e.preventDefault();
+  run(async () => {
+    const body = { name: $('#m-sn').value.trim(), address: $('#m-sa').value, phone: $('#m-sp').value };
+    if ($('#m-su').value) body.user_id = +$('#m-su').value;
+    await api('/admin/stores', { method: 'POST', body });
+    toast("Do'kon qo'shildi"); await vStoresAdmin();
+  });
+}
+function storeDlg(id) {
+  const s = state.stores.find(x => x.id === id);
+  const cands = state.users.filter(u => u.role === 'dokon' && (u.id === s.user_id || !state.stores.some(o => o.user_id === u.id)));
+  dlgOpen(`<form onsubmit="saveStore(event, ${id})">
+    <h3>Do'konni tahrirlash</h3>
+    <label>Nomi <input id="e-n" required value="${esc(s.name)}"></label>
+    <label>Manzili <input id="e-a" value="${esc(s.address)}"></label>
+    <label>Telefon <input id="e-p" inputmode="tel" value="${esc(s.phone)}"></label>
+    <label>Foydalanuvchi <select id="e-u"><option value="">Biriktirilmagan</option>${opts(cands, u => u.username)}</select></label>
+    <div class="row"><button class="primary" type="submit">Saqlash</button><button class="ghost" type="button" onclick="dlgClose()">Bekor qilish</button></div></form>`);
+  $('#e-u').value = s.user_id || '';
+}
+function saveStore(e, id) {
+  e.preventDefault();
+  run(async () => {
+    await api(`/admin/stores/${id}`, { method: 'PATCH', body: { name: $('#e-n').value.trim(), address: $('#e-a').value, phone: $('#e-p').value, user_id: $('#e-u').value ? +$('#e-u').value : null } });
+    dlgClose(); toast('Saqlandi'); await vStoresAdmin();
+  });
+}
+
+/* --- Tovarlar --- */
+async function vProductsAdmin() {
+  const products = await api('/products');
+  state.products = products;
+  const cats = [...new Set(products.map(p => p.category).filter(Boolean))];
+  $('#view').innerHTML = `<div class="page-head"><h2>Tovarlar</h2></div>
+    <form class="card" onsubmit="addProduct(event)"><h3>Yangi tovar</h3>
+      <div class="grid2" style="margin-top:10px">
+        <label>Nomi <input id="m-pn" required></label>
+        <label>Birligi <select id="m-pu">${unitOpts('dona')}</select></label>
+        <label>Narxi (so'm) <input id="m-pp" type="number" min="0" step="any" inputmode="decimal" required></label>
+        <label>Kategoriya <input id="m-pc" list="cats" placeholder="Masalan: Ichimliklar"><datalist id="cats">${cats.map(c => `<option value="${esc(c)}">`).join('')}</datalist></label>
+        <label>Tavsif <input id="m-pd" maxlength="300" placeholder="Ixtiyoriy"></label>
+      </div><div class="row" style="margin-top:12px"><button class="primary" type="submit">Tovar qo'shish</button></div></form>
+    ${products.length ? `<div class="card">${products.map(p => `
+      <div class="line"><div class="what"><b>${esc(p.name)}</b> ${p.is_active ? '' : '<span class="badge s-bekor">sotuvda yo\'q</span>'}
+        <span class="meta">${fmt(p.price)} so'm / ${esc(p.unit)}${p.category ? ', ' + esc(p.category) : ''}</span></div>
+        <button class="ghost small" onclick="productDlg(${p.id})">Tahrirlash</button></div>`).join('')}</div>` : empty("Hali tovar qo'shilmagan.")}`;
+}
+function addProduct(e) {
+  e.preventDefault();
+  run(async () => {
+    await api('/admin/products', { method: 'POST', body: { name: $('#m-pn').value.trim(), unit: $('#m-pu').value, price: parseFloat($('#m-pp').value), category: $('#m-pc').value.trim(), description: $('#m-pd').value } });
+    toast("Tovar qo'shildi"); await vProductsAdmin();
+  });
+}
+function productDlg(id) {
+  const p = state.products.find(x => x.id === id);
+  dlgOpen(`<form onsubmit="saveProduct(event, ${id})">
+    <h3>Tovarni tahrirlash</h3>
+    <label>Nomi <input id="e-n" required value="${esc(p.name)}"></label>
+    <label>Birligi <select id="e-u">${unitOpts(p.unit)}</select></label>
+    <label>Narxi <input id="e-p" type="number" min="0" step="any" inputmode="decimal" required value="${p.price}"></label>
+    <label>Kategoriya <input id="e-c" value="${esc(p.category)}"></label>
+    <label>Tavsif <input id="e-d" maxlength="300" value="${esc(p.description)}"></label>
+    <label style="display:flex;align-items:center;gap:8px;color:var(--ink)"><input id="e-a" type="checkbox" style="width:auto;min-height:0" ${p.is_active ? 'checked' : ''}> Katalogda ko'rinsin (sotuvda)</label>
+    <p class="meta">Yangi narx faqat keyingi buyurtmalarga ta'sir qiladi. Eski buyurtmalar narxi o'zgarmaydi.</p>
+    <div class="row"><button class="primary" type="submit">Saqlash</button><button class="ghost" type="button" onclick="dlgClose()">Bekor qilish</button></div></form>`);
+}
+function saveProduct(e, id) {
+  e.preventDefault();
+  run(async () => {
+    await api(`/admin/products/${id}`, { method: 'PATCH', body: { name: $('#e-n').value.trim(), unit: $('#e-u').value, price: parseFloat($('#e-p').value), category: $('#e-c').value.trim(), description: $('#e-d').value, is_active: $('#e-a').checked } });
+    dlgClose(); toast('Saqlandi'); await vProductsAdmin();
+  });
+}
+
+/* --- Hisobot --- */
+async function vReport() {
+  const from = state.rFrom || daysAgo(30), to = state.rTo || today();
+  state.rFrom = from; state.rTo = to;
+  const d = await api(`/admin/report?date_from=${from}&date_to=${to}`);
+  const pm = Object.entries(d.payments_by_method || {});
+  $('#view').innerHTML = `<div class="page-head"><h2>Hisobot</h2></div>
+    <div class="card"><div class="grid2">
+      <label>Boshlanish sanasi <input type="date" id="rp-f" value="${from}"></label>
+      <label>Tugash sanasi <input type="date" id="rp-t" value="${to}"></label>
+      <div class="row"><button class="primary" onclick="applyReport()">Ko'rsatish</button><button class="ghost" onclick="downloadCsv()">Excel uchun yuklab olish (CSV)</button></div>
+    </div></div>
+    <h3 class="section-title">Shu davrdagi to'lovlar: ${fmt(d.payments_total)} so'm</h3>
+    ${pm.length ? `<div class="card">${pm.map(([m, v]) => `<div class="line"><span>${PAYL[m] || esc(m)}</span><b>${fmt(v)} so'm</b></div>`).join('')}</div>` : empty("Bu davrda tasdiqlangan to'lov yo'q.")}
+    <h3 class="section-title">Tovarlar bo'yicha</h3>
+    ${d.by_product.length ? `<div class="card">${d.by_product.map(r => `<div class="line"><div class="what"><b>${esc(r.product)}</b><span class="meta">Yetkazilgan ${fmt(r.delivered)} ${esc(r.unit)}</span></div><span>Sotilgan: <b>${fmt(r.sold)} ${esc(r.unit)}</b></span></div>`).join('')}</div>` : empty("Bu davrda ma'lumot yo'q.")}
+    <h3 class="section-title">Do'konlar bo'yicha sotuv</h3>
+    ${d.by_store.length ? d.by_store.map(s => `<div class="card"><h3>${esc(s.store)}</h3>${s.lines.map(l => `<div class="line"><span>${esc(l.product)}</span><b>${fmt(l.sold)} ${esc(l.unit)}</b></div>`).join('')}</div>`).join('') : empty("Bu davrda sotuv yo'q.")}`;
+}
+function applyReport() { state.rFrom = $('#rp-f').value; state.rTo = $('#rp-t').value; run(vReport); }
+function downloadCsv() {
+  run(async () => {
+    const res = await fetch(`/admin/report.csv?date_from=${state.rFrom}&date_to=${state.rTo}`, { headers: { Authorization: 'Bearer ' + state.token } });
+    if (!res.ok) throw new Error(errText(await res.json().catch(() => null)) || "Yuklab bo'lmadi");
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = `hisobot_${state.rFrom}_${state.rTo}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+/* --- Parolni o'zgartirish (hamma rollar) --- */
+async function vPassword() {
+  $('#view').innerHTML = `<div class="page-head"><h2>Parolni o'zgartirish</h2></div>
+    <form class="card" onsubmit="changePw(event)" style="max-width:420px">
+      <div style="display:grid;gap:12px">
+        <label>Joriy parol <input id="pw-o" type="password" required autocomplete="current-password"></label>
+        <label>Yangi parol <input id="pw-n" type="password" minlength="6" required autocomplete="new-password"></label>
+        <label>Yangi parolni takrorlang <input id="pw-r" type="password" minlength="6" required autocomplete="new-password"></label>
+        <div class="row"><button class="primary" type="submit">Parolni saqlash</button></div>
+      </div>
+    </form>`;
+}
+function changePw(e) {
+  e.preventDefault();
+  run(async () => {
+    if ($('#pw-n').value !== $('#pw-r').value) throw new Error('Yangi parollar bir xil emas');
+    await api('/auth/change-password', { method: 'POST', body: { old_password: $('#pw-o').value, new_password: $('#pw-n').value } });
+    toast("Parol o'zgartirildi"); await vPassword();
+  });
+}
+
+const VIEWS = {
+  catalog: vCatalog, cart: vCart, orders: vOrders, pending: vPending, stock: vStock, pay: vPay,
+  dash: vDash, zorders: vZOrders, deliver: vDeliver, zstock: vZStock, debts: vDebts, settings: vSettings,
+  overview: vOverview, stores: vStoresAdmin, products: vProductsAdmin, users: vUsers, report: vReport,
+  password: vPassword,
+};
+
+boot();
+</script>
+</body>
+</html>
